@@ -13,11 +13,13 @@ import {
   Sun,
   Moon,
   Sparkles,
-  Trash2
+  Trash2,
+  Image as ImageIcon,
+  ImageMinus
 } from 'lucide-react';
 
-type Operation = 'add' | 'subtract' | 'multiply' | 'divide' | null;
-type Theme = 'light' | 'dark' | 'rainbow';
+type Operation = 'add' | 'subtract' | 'multiply' | 'divide' | 'pow' | null;
+type CalcMode = 'basica' | 'conjunta';
 
 interface HistoryItem {
   id: string;
@@ -32,19 +34,19 @@ export default function App() {
   const [overwrite, setOverwrite] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [theme, setTheme] = useState<Theme>('light');
-  const [hue, setHue] = useState(0);
+  const [mode, setMode] = useState<CalcMode>('basica');
+  const [isRadians, setIsRadians] = useState(true);
+  const [bgImage, setBgImage] = useState<string | null>(null);
 
-  // Rainbow effect logic
-  useEffect(() => {
-    let interval: number;
-    if (theme === 'rainbow') {
-      interval = window.setInterval(() => {
-        setHue((prev) => (prev + 1) % 360);
-      }, 50);
-    }
-    return () => clearInterval(interval);
-  }, [theme]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fact = (n: number): number => {
+    if (n < 0) return NaN;
+    if (n === 0) return 1;
+    let res = 1;
+    for (let i = 2; i <= Math.floor(n); i++) res *= i;
+    return res;
+  };
 
   const clear = () => {
     setCurrentValue('0');
@@ -112,6 +114,9 @@ export default function App() {
       case 'divide':
         computation = current === 0 ? 0 : prev / current;
         break;
+      case 'pow':
+        computation = Math.pow(prev, current);
+        break;
       default:
         return currentValue;
     }
@@ -125,7 +130,13 @@ export default function App() {
     const result = compute();
     
     // Add to history
-    const opSymbols: Record<string, string> = { add: '+', subtract: '-', multiply: '×', divide: '÷' };
+    const opSymbols: Record<string, string> = { 
+      add: '+', 
+      subtract: '-', 
+      multiply: '×', 
+      divide: '÷',
+      pow: '^'
+    };
     const expression = `${previousValue} ${opSymbols[operation || '']} ${currentValue}`;
     const newItem: HistoryItem = {
       id: Date.now().toString(),
@@ -148,6 +159,61 @@ export default function App() {
     setCurrentValue((prev) => (parseFloat(prev) / 100).toString());
   };
 
+  const handleAdvanced = (fn: string) => {
+    const current = parseFloat(currentValue);
+    let result = 0;
+    let name = '';
+
+    const toRad = (val: number) => isRadians ? val : (val * Math.PI) / 180;
+    const fromRad = (val: number) => isRadians ? val : (val * 180) / Math.PI;
+
+    switch (fn) {
+      case 'sqrt': result = Math.sqrt(current); name = `√(${current})`; break;
+      case 'cbrt': result = Math.cbrt(current); name = `∛(${current})`; break;
+      case 'sqr': result = Math.pow(current, 2); name = `(${current})²`; break;
+      case 'cube': result = Math.pow(current, 3); name = `(${current})³`; break;
+      case 'sin': result = Math.sin(toRad(current)); name = `sin(${current})`; break;
+      case 'cos': result = Math.cos(toRad(current)); name = `cos(${current})`; break;
+      case 'tan': result = Math.tan(toRad(current)); name = `tan(${current})`; break;
+      case 'asin': result = fromRad(Math.asin(current)); name = `asin(${current})`; break;
+      case 'acos': result = fromRad(Math.acos(current)); name = `acos(${current})`; break;
+      case 'atan': result = fromRad(Math.atan(current)); name = `atan(${current})`; break;
+      case 'sinh': result = Math.sinh(current); name = `sinh(${current})`; break;
+      case 'cosh': result = Math.cosh(current); name = `cosh(${current})`; break;
+      case 'tanh': result = Math.tanh(current); name = `tanh(${current})`; break;
+      case 'abs': result = Math.abs(current); name = `abs(${current})`; break;
+      case 'fact': result = fact(current); name = `${current}!`; break;
+      case 'log10': result = Math.log10(current); name = `log(${current})`; break;
+      case 'log2': result = Math.log2(current); name = `log2(${current})`; break;
+      case 'ln': result = Math.log(current); name = `ln(${current})`; break;
+      case 'exp': result = Math.exp(current); name = `e^${current}`; break;
+      case '10x': result = Math.pow(10, current); name = `10^${current}`; break;
+      case 'inv': result = 1/current; name = `1/${current}`; break;
+      case 'pi': result = Math.PI; name = 'π'; break;
+      case 'e': result = Math.E; name = 'e'; break;
+      case 'rand': result = Math.random(); name = 'rand'; break;
+      case 'round': result = Math.round(current); name = `round(${current})`; break;
+      case 'floor': result = Math.floor(current); name = `floor(${current})`; break;
+      case 'ceil': result = Math.ceil(current); name = `ceil(${current})`; break;
+      default: return;
+    }
+
+    const resultStr = Number(result.toFixed(8)).toString();
+    
+    // Add to history if it's a computational function (not just a constant)
+    if (fn !== 'pi' && fn !== 'e') {
+      const newItem: HistoryItem = {
+        id: Date.now().toString(),
+        expression: name,
+        result: resultStr
+      };
+      setHistory(prev => [newItem, ...prev].slice(0, 50));
+    }
+
+    setCurrentValue(resultStr);
+    setOverwrite(true);
+  };
+
   // Keyboard support
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -166,42 +232,127 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentValue, previousValue, operation, overwrite]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBgImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const formatDisplay = (val: string) => {
     const [integer, decimal] = val.split('.');
     const formattedInteger = Number(integer).toLocaleString('en-US');
     return decimal !== undefined ? `${formattedInteger}.${decimal}` : formattedInteger;
   };
 
-  const getBgStyles = () => {
-    if (theme === 'dark') return 'bg-[#0F1115]';
-    if (theme === 'rainbow') return '';
-    return 'bg-[#F5F5F7]';
-  };
-
-  const getRainbowBg = () => {
-    if (theme !== 'rainbow') return {};
-    return {
-      backgroundColor: `hsla(${hue}, 70%, 90%, 1)`,
-      backgroundImage: `linear-gradient(135deg, hsla(${hue}, 70%, 90%, 1) 0%, hsla(${(hue + 60) % 360}, 70%, 90%, 1) 100%)`
-    };
-  };
-
   return (
-    <div 
-      className={`min-h-screen transition-colors duration-700 flex flex-col items-center justify-center p-4 font-sans text-[#1D1D1F] ${getBgStyles()}`}
-      style={getRainbowBg()}
-    >
-      {/* Theme Toggle Controls */}
-      <div className="mb-8 flex gap-4 bg-white/40 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-white/20" id="theme-controls">
-        <ThemeButton active={theme === 'light'} onClick={() => setTheme('light')} label="Blanco" icon={<Sun size={18} />} />
-        <ThemeButton active={theme === 'dark'} onClick={() => setTheme('dark')} label="Oscuro" icon={<Moon size={18} />} />
-        <ThemeButton active={theme === 'rainbow'} onClick={() => setTheme('rainbow')} label="Arcoíris" icon={<Sparkles size={18} />} />
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 font-sans text-[#1D1D1F] overflow-hidden">
+      {/* Background Layer (Base Color) */}
+      <div className={`absolute inset-0 -z-30 transition-colors duration-700 ${bgImage ? 'bg-black' : 'bg-[#F5F5F7]'}`} id="base-bg" />
+
+      {/* Background Image Layer */}
+      <AnimatePresence>
+        {bgImage && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${bgImage})` }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Background Blobs Layer */}
+      <div className={`absolute inset-0 -z-10 pointer-events-none transition-opacity duration-500 ${bgImage ? 'opacity-30' : 'opacity-100'}`} id="blobs-container">
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], x: [0, 100, 0], y: [0, 50, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-400/30 blur-[100px]" 
+        />
+        <motion.div 
+          animate={{ scale: [1, 1.1, 1], x: [0, -80, 0], y: [0, 120, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-400/30 blur-[100px]" 
+        />
+        <motion.div 
+          animate={{ scale: [1, 1.3, 1], x: [0, 150, 0], y: [0, -50, 0] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[20%] right-[10%] w-[40%] h-[40%] rounded-full bg-pink-300/20 blur-[80px]" 
+        />
       </div>
 
+      {/* Controls and Calculator Content (Now clearly above background) */}
+      <div className="relative z-10 flex flex-col items-center w-full mb-4 max-w-[400px]">
+        {/* Background Selector Buttons */}
+        <div className="flex gap-2 bg-white/40 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-white/20" id="bg-controls">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImageChange} 
+            className="hidden" 
+            accept="image/*" 
+          />
+          
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold tracking-tight transition-all duration-300 text-gray-700 hover:bg-white/60"
+            title="Importar fondo de la galería"
+          >
+            <ImageIcon size={18} />
+            <span className="hidden sm:inline">importar fondo de la galeria</span>
+          </button>
+          
+          {bgImage && (
+            <button 
+              onClick={() => setBgImage(null)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold tracking-tight transition-all duration-300 text-red-600 hover:bg-red-50/60"
+              title="Quitar Fondo"
+            >
+              <ImageMinus size={18} />
+              <span className="hidden sm:inline">Quitar</span>
+            </button>
+          )}
+        </div>
+
+        {/* Mode Switcher */}
+        <div className="flex gap-4 w-full" id="mode-switcher">
+        <button 
+          onClick={() => setMode('basica')}
+          className={`
+            flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-300 shadow-lg border-2
+            ${mode === 'basica' 
+              ? 'bg-[#0071E3] text-white border-[#0071E3] scale-105' 
+              : 'bg-white/60 text-gray-500 border-transparent hover:bg-white/80'}
+          `}
+        >
+          Calculadora Básica
+        </button>
+        <button 
+          onClick={() => setMode('conjunta')}
+          className={`
+            flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-300 shadow-lg border-2
+            ${mode === 'conjunta' 
+              ? 'bg-[#0071E3] text-white border-[#0071E3] scale-105' 
+              : 'bg-white/60 text-gray-500 border-transparent hover:bg-white/80'}
+          `}
+        >
+          Calculadora Conjunta
+        </button>
+      </div>
+    </div>
+
+
+
       <motion.div 
+        layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative w-full max-w-[340px] bg-white rounded-[40px] shadow-2xl shadow-black/10 overflow-hidden border border-white/50 backdrop-blur-xl"
+        className={`relative w-full transition-all duration-500 bg-white rounded-[40px] shadow-2xl shadow-black/10 overflow-hidden border border-white/50 backdrop-blur-xl ${mode === 'basica' ? 'max-w-[340px]' : 'max-w-[500px]'}`}
         id="calculator-container"
       >
         {/* History Overlay */}
@@ -289,36 +440,81 @@ export default function App() {
           </div>
         </div>
 
-        {/* Buttons Grid */}
-        <div className="p-4 grid grid-cols-4 gap-3 bg-[#FBFBFD]" id="buttons-grid">
+          {/* Buttons Grid */}
+        <div className={`p-4 grid gap-3 bg-[#FBFBFD] transition-all duration-500 ${mode === 'basica' ? 'grid-cols-4' : 'grid-cols-6'}`} id="buttons-grid">
+          {mode === 'conjunta' && (
+            <>
+              {/* Scientific Rows */}
+              <CalcButton onClick={() => setIsRadians(!isRadians)} variant="operator" id="btn-rad-deg" className="text-xs">{isRadians ? 'Rad' : 'Deg'}</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('fact')} variant="action" id="btn-fact" className="text-sm">x!</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('abs')} variant="action" id="btn-abs" className="text-sm">|x|</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('inv')} variant="action" id="btn-inv" className="text-sm">1/x</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('pi')} variant="action" id="btn-pi" className="text-sm">π</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('e')} variant="action" id="btn-e" className="text-sm">e</CalcButton>
+
+              <CalcButton onClick={() => handleAdvanced('sin')} variant="action" id="btn-sin" className="text-sm">sin</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('cos')} variant="action" id="btn-cos" className="text-sm">cos</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('tan')} variant="action" id="btn-tan" className="text-sm">tan</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('asin')} variant="action" id="btn-asin" className="text-sm">sin⁻¹</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('acos')} variant="action" id="btn-acos" className="text-sm">cos⁻¹</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('atan')} variant="action" id="btn-atan" className="text-sm">tan⁻¹</CalcButton>
+
+              <CalcButton onClick={() => handleAdvanced('sinh')} variant="action" id="btn-sinh" className="text-sm">sinh</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('cosh')} variant="action" id="btn-cosh" className="text-sm">cosh</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('tanh')} variant="action" id="btn-tanh" className="text-sm">tanh</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('log10')} variant="action" id="btn-log10" className="text-sm">log₁₀</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('log2')} variant="action" id="btn-log2" className="text-sm">log₂</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('ln')} variant="action" id="btn-ln" className="text-sm">ln</CalcButton>
+
+              <CalcButton onClick={() => handleAdvanced('sqrt')} variant="action" id="btn-sqrt" className="text-sm">√</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('cbrt')} variant="action" id="btn-cbrt" className="text-sm">∛</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('sqr')} variant="action" id="btn-sqr" className="text-sm">x²</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('cube')} variant="action" id="btn-cube" className="text-sm">x³</CalcButton>
+              <CalcButton onClick={() => chooseOperation('pow')} active={operation === 'pow'} variant="operator" id="btn-pow" className="text-sm">xʸ</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('exp')} variant="action" id="btn-exp" className="text-sm">eˣ</CalcButton>
+
+              <CalcButton onClick={() => handleAdvanced('10x')} variant="action" id="btn-10x" className="text-sm">10ˣ</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('rand')} variant="action" id="btn-rand" className="text-sm">rand</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('round')} variant="action" id="btn-round" className="text-sm">round</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('floor')} variant="action" id="btn-floor" className="text-sm">floor</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('ceil')} variant="action" id="btn-ceil" className="text-sm">ceil</CalcButton>
+              <div className="bg-transparent" />
+            </>
+          )}
+
           {/* Row 1 */}
           <CalcButton onClick={clear} variant="action" id="btn-clear"><RotateCcw size={20} /></CalcButton>
           <CalcButton onClick={toggleSign} variant="action" id="btn-plus-minus">±</CalcButton>
           <CalcButton onClick={applyPercent} variant="action" id="btn-percent"><Percent size={20} /></CalcButton>
           <CalcButton onClick={() => chooseOperation('divide')} active={operation === 'divide'} variant="operator" id="btn-divide"><Divide size={24} /></CalcButton>
+          {mode === 'conjunta' && <div className="col-span-2" />}
 
           {/* Row 2 */}
           <CalcButton onClick={() => addDigit('7')} id="btn-7">7</CalcButton>
           <CalcButton onClick={() => addDigit('8')} id="btn-8">8</CalcButton>
           <CalcButton onClick={() => addDigit('9')} id="btn-9">9</CalcButton>
           <CalcButton onClick={() => chooseOperation('multiply')} active={operation === 'multiply'} variant="operator" id="btn-multiply"><X size={24} /></CalcButton>
+          {mode === 'conjunta' && <div className="col-span-2" />}
 
           {/* Row 3 */}
           <CalcButton onClick={() => addDigit('4')} id="btn-4">4</CalcButton>
           <CalcButton onClick={() => addDigit('5')} id="btn-5">5</CalcButton>
           <CalcButton onClick={() => addDigit('6')} id="btn-6">6</CalcButton>
           <CalcButton onClick={() => chooseOperation('subtract')} active={operation === 'subtract'} variant="operator" id="btn-subtract"><Minus size={24} /></CalcButton>
+          {mode === 'conjunta' && <div className="col-span-2" />}
 
           {/* Row 4 */}
           <CalcButton onClick={() => addDigit('1')} id="btn-1">1</CalcButton>
           <CalcButton onClick={() => addDigit('2')} id="btn-2">2</CalcButton>
           <CalcButton onClick={() => addDigit('3')} id="btn-3">3</CalcButton>
           <CalcButton onClick={() => chooseOperation('add')} active={operation === 'add'} variant="operator" id="btn-plus"><Plus size={24} /></CalcButton>
+          {mode === 'conjunta' && <div className="col-span-2" />}
 
           {/* Row 5 */}
-          <CalcButton onClick={() => addDigit('0')} className="col-span-2" id="btn-0">0</CalcButton>
+          <CalcButton onClick={() => addDigit('0')} className={mode === 'basica' ? "col-span-2" : "col-span-1"} id="btn-0">0</CalcButton>
+          {mode === 'conjunta' && <div className="invisible" />}
           <CalcButton onClick={() => addDigit('.')} id="btn-dot">.</CalcButton>
-          <CalcButton onClick={equals} variant="equals" id="btn-equals"><Equal size={24} /></CalcButton>
+          <CalcButton onClick={equals} variant="equals" className={mode === 'conjunta' ? "col-span-3" : ""} id="btn-equals"><Equal size={24} /></CalcButton>
         </div>
         
         {/* Footer info */}
@@ -372,17 +568,4 @@ function CalcButton({ children, onClick, variant = 'number', active = false, cla
   );
 }
 
-function ThemeButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold tracking-tight transition-all duration-300
-        ${active ? 'bg-white text-[#0071E3] shadow-sm' : 'text-gray-500 hover:text-gray-800'}
-      `}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
+
