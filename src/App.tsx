@@ -289,7 +289,7 @@ export default function App() {
       {/* Controls and Calculator Content (Now clearly above background) */}
       <div className="relative z-10 flex flex-col items-center w-full mb-4 max-w-[400px]">
         {/* Background Selector Buttons */}
-        <div className="flex gap-2 bg-white/40 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-white/20" id="bg-controls">
+        <div className="flex gap-2 bg-white/40 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-white/20 mb-24" id="bg-controls">
           <input 
             type="file" 
             ref={fileInputRef} 
