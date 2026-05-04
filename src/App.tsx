@@ -205,7 +205,7 @@ export default function App() {
         
         {/* Footer info */}
         <div className="pb-6 pt-2 px-8 text-center" id="footer">
-          <p className="text-[10px] uppercase tracking-widest text-[#86868B] font-medium">Precision Instrument</p>
+          <p className="text-[10px] uppercase tracking-widest text-[#86868B] font-medium">Marc Calculator</p>
         </div>
       </motion.div>
     </div>
