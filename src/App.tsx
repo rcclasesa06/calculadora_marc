@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Delete, 
@@ -8,16 +8,43 @@ import {
   Plus, 
   Equal, 
   RotateCcw,
-  Percent
+  Percent,
+  History,
+  Sun,
+  Moon,
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 
 type Operation = 'add' | 'subtract' | 'multiply' | 'divide' | null;
+type Theme = 'light' | 'dark' | 'rainbow';
+
+interface HistoryItem {
+  id: string;
+  expression: string;
+  result: string;
+}
 
 export default function App() {
   const [currentValue, setCurrentValue] = useState('0');
   const [previousValue, setPreviousValue] = useState<string | null>(null);
   const [operation, setOperation] = useState<Operation>(null);
   const [overwrite, setOverwrite] = useState(false);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [theme, setTheme] = useState<Theme>('light');
+  const [hue, setHue] = useState(0);
+
+  // Rainbow effect logic
+  useEffect(() => {
+    let interval: number;
+    if (theme === 'rainbow') {
+      interval = window.setInterval(() => {
+        setHue((prev) => (prev + 1) % 360);
+      }, 50);
+    }
+    return () => clearInterval(interval);
+  }, [theme]);
 
   const clear = () => {
     setCurrentValue('0');
@@ -96,6 +123,17 @@ export default function App() {
   const equals = () => {
     if (operation === null || previousValue === null) return;
     const result = compute();
+    
+    // Add to history
+    const opSymbols: Record<string, string> = { add: '+', subtract: '-', multiply: '×', divide: '÷' };
+    const expression = `${previousValue} ${opSymbols[operation || '']} ${currentValue}`;
+    const newItem: HistoryItem = {
+      id: Date.now().toString(),
+      expression,
+      result
+    };
+    setHistory(prev => [newItem, ...prev].slice(0, 50));
+
     setCurrentValue(result);
     setPreviousValue(null);
     setOperation(null);
@@ -134,16 +172,96 @@ export default function App() {
     return decimal !== undefined ? `${formattedInteger}.${decimal}` : formattedInteger;
   };
 
+  const getBgStyles = () => {
+    if (theme === 'dark') return 'bg-[#0F1115]';
+    if (theme === 'rainbow') return '';
+    return 'bg-[#F5F5F7]';
+  };
+
+  const getRainbowBg = () => {
+    if (theme !== 'rainbow') return {};
+    return {
+      backgroundColor: `hsla(${hue}, 70%, 90%, 1)`,
+      backgroundImage: `linear-gradient(135deg, hsla(${hue}, 70%, 90%, 1) 0%, hsla(${(hue + 60) % 360}, 70%, 90%, 1) 100%)`
+    };
+  };
+
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center p-4 font-sans text-[#1D1D1F]">
+    <div 
+      className={`min-h-screen transition-colors duration-700 flex flex-col items-center justify-center p-4 font-sans text-[#1D1D1F] ${getBgStyles()}`}
+      style={getRainbowBg()}
+    >
+      {/* Theme Toggle Controls */}
+      <div className="mb-8 flex gap-4 bg-white/40 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-white/20" id="theme-controls">
+        <ThemeButton active={theme === 'light'} onClick={() => setTheme('light')} label="Blanco" icon={<Sun size={18} />} />
+        <ThemeButton active={theme === 'dark'} onClick={() => setTheme('dark')} label="Oscuro" icon={<Moon size={18} />} />
+        <ThemeButton active={theme === 'rainbow'} onClick={() => setTheme('rainbow')} label="Arcoíris" icon={<Sparkles size={18} />} />
+      </div>
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[340px] bg-white rounded-[40px] shadow-2xl shadow-black/10 overflow-hidden border border-white/50 backdrop-blur-xl"
+        className="relative w-full max-w-[340px] bg-white rounded-[40px] shadow-2xl shadow-black/10 overflow-hidden border border-white/50 backdrop-blur-xl"
         id="calculator-container"
       >
+        {/* History Overlay */}
+        <AnimatePresence>
+          {showHistory && (
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              className="absolute inset-0 z-50 bg-white shadow-xl flex flex-col"
+              id="history-panel"
+            >
+              <div className="p-6 border-b flex justify-between items-center">
+                <h3 className="font-semibold text-lg text-gray-800">Historial</h3>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setHistory([])}
+                    className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setShowHistory(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {history.length === 0 ? (
+                  <p className="text-center text-gray-400 mt-10">Sin historial aún</p>
+                ) : (
+                  history.map((item) => (
+                    <motion.div 
+                      key={item.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-right border-b border-gray-50 pb-3"
+                    >
+                      <p className="text-sm text-gray-400 font-mono mb-1">{item.expression}</p>
+                      <p className="text-xl font-semibold font-mono text-[#0071E3]">= {item.result}</p>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Display Area */}
         <div className="p-8 pb-6 flex flex-col items-end justify-end min-h-[160px] bg-gradient-to-b from-white to-[#FBFBFD]" id="display-container">
+          <button 
+            onClick={() => setShowHistory(true)}
+            className="absolute top-6 left-8 p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600"
+            id="history-toggle"
+          >
+            <History size={20} />
+          </button>
+
           <AnimatePresence mode="wait">
             <motion.div 
               key={previousValue + (operation || '')}
@@ -251,5 +369,20 @@ function CalcButton({ children, onClick, variant = 'number', active = false, cla
     >
       {children}
     </motion.button>
+  );
+}
+
+function ThemeButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold tracking-tight transition-all duration-300
+        ${active ? 'bg-white text-[#0071E3] shadow-sm' : 'text-gray-500 hover:text-gray-800'}
+      `}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
