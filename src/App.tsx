@@ -287,9 +287,9 @@ export default function App() {
       </div>
 
       {/* Controls and Calculator Content (Now clearly above background) */}
-      <div className="relative z-10 flex flex-col items-center w-full mb-4 max-w-[400px]">
+      <div className="relative z-10 flex flex-col items-center w-full mb-8 max-w-[90%] sm:max-w-[450px]">
         {/* Background Selector Buttons */}
-        <div className="flex gap-2 bg-white/40 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-white/20 mb-24" id="bg-controls">
+        <div className="flex flex-wrap justify-center gap-2 bg-white/40 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-white/20 mb-12 sm:mb-20" id="bg-controls">
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -300,59 +300,57 @@ export default function App() {
           
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold tracking-tight transition-all duration-300 text-gray-700 hover:bg-white/60"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold tracking-tight transition-all duration-300 text-gray-700 hover:bg-white/60 active:scale-95"
             title="Importar fondo de la galería"
           >
             <ImageIcon size={18} />
-            <span className="hidden sm:inline">importar fondo de la galeria</span>
+            <span className="sm:inline capitalize">importar fondo de la galeria</span>
           </button>
           
           {bgImage && (
             <button 
               onClick={() => setBgImage(null)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold tracking-tight transition-all duration-300 text-red-600 hover:bg-red-50/60"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold tracking-tight transition-all duration-300 text-red-600 hover:bg-red-50/60 active:scale-95"
               title="Quitar Fondo"
             >
               <ImageMinus size={18} />
-              <span className="hidden sm:inline">Quitar</span>
+              <span className="sm:inline">Quitar</span>
             </button>
           )}
         </div>
 
         {/* Mode Switcher */}
-        <div className="flex gap-4 w-full" id="mode-switcher">
-        <button 
-          onClick={() => setMode('basica')}
-          className={`
-            flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-300 shadow-lg border-2
-            ${mode === 'basica' 
-              ? 'bg-[#0071E3] text-white border-[#0071E3] scale-105' 
-              : 'bg-white/60 text-gray-500 border-transparent hover:bg-white/80'}
-          `}
-        >
-          Calculadora Básica
-        </button>
-        <button 
-          onClick={() => setMode('conjunta')}
-          className={`
-            flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-300 shadow-lg border-2
-            ${mode === 'conjunta' 
-              ? 'bg-[#0071E3] text-white border-[#0071E3] scale-105' 
-              : 'bg-white/60 text-gray-500 border-transparent hover:bg-white/80'}
-          `}
-        >
-          Calculadora Conjunta
-        </button>
+        <div className="flex gap-3 w-full" id="mode-switcher">
+          <button 
+            onClick={() => setMode('basica')}
+            className={`
+              flex-1 py-3 sm:py-4 rounded-2xl text-sm sm:text-lg font-bold transition-all duration-300 shadow-lg border-2
+              ${mode === 'basica' 
+                ? 'bg-[#0071E3] text-white border-[#0071E3] scale-105' 
+                : 'bg-white/60 text-gray-500 border-transparent hover:bg-white/80'}
+            `}
+          >
+            Básica
+          </button>
+          <button 
+            onClick={() => setMode('conjunta')}
+            className={`
+              flex-1 py-3 sm:py-4 rounded-2xl text-sm sm:text-lg font-bold transition-all duration-300 shadow-lg border-2
+              ${mode === 'conjunta' 
+                ? 'bg-[#0071E3] text-white border-[#0071E3] scale-105' 
+                : 'bg-white/60 text-gray-500 border-transparent hover:bg-white/80'}
+            `}
+          >
+            Conjunta
+          </button>
+        </div>
       </div>
-    </div>
-
-
 
       <motion.div 
         layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`relative w-full transition-all duration-500 bg-white rounded-[40px] shadow-2xl shadow-black/10 overflow-hidden border border-white/50 backdrop-blur-xl ${mode === 'basica' ? 'max-w-[340px]' : 'max-w-[500px]'}`}
+        className={`relative w-full transition-all duration-500 bg-white rounded-[40px] shadow-2xl shadow-black/10 overflow-hidden border border-white/50 backdrop-blur-xl ${mode === 'basica' ? 'max-w-[340px]' : 'max-w-[360px] sm:max-w-xl'}`}
         id="calculator-container"
       >
         {/* History Overlay */}
@@ -441,43 +439,43 @@ export default function App() {
         </div>
 
           {/* Buttons Grid */}
-        <div className={`p-4 grid gap-3 bg-[#FBFBFD] transition-all duration-500 ${mode === 'basica' ? 'grid-cols-4' : 'grid-cols-6'}`} id="buttons-grid">
+        <div className={`p-4 grid gap-2 sm:gap-3 bg-[#FBFBFD] transition-all duration-500 ${mode === 'basica' ? 'grid-cols-4' : 'grid-cols-6'}`} id="buttons-grid">
           {mode === 'conjunta' && (
             <>
               {/* Scientific Rows */}
-              <CalcButton onClick={() => setIsRadians(!isRadians)} variant="operator" id="btn-rad-deg" className="text-xs">{isRadians ? 'Rad' : 'Deg'}</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('fact')} variant="action" id="btn-fact" className="text-sm">x!</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('abs')} variant="action" id="btn-abs" className="text-sm">|x|</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('inv')} variant="action" id="btn-inv" className="text-sm">1/x</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('pi')} variant="action" id="btn-pi" className="text-sm">π</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('e')} variant="action" id="btn-e" className="text-sm">e</CalcButton>
+              <CalcButton onClick={() => setIsRadians(!isRadians)} variant="operator" id="btn-rad-deg" className="text-[10px] sm:text-xs">{isRadians ? 'Rad' : 'Deg'}</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('fact')} variant="action" id="btn-fact" className="text-xs sm:text-sm">x!</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('abs')} variant="action" id="btn-abs" className="text-xs sm:text-sm">|x|</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('inv')} variant="action" id="btn-inv" className="text-xs sm:text-sm">1/x</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('pi')} variant="action" id="btn-pi" className="text-xs sm:text-sm">π</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('e')} variant="action" id="btn-e" className="text-xs sm:text-sm">e</CalcButton>
 
-              <CalcButton onClick={() => handleAdvanced('sin')} variant="action" id="btn-sin" className="text-sm">sin</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('cos')} variant="action" id="btn-cos" className="text-sm">cos</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('tan')} variant="action" id="btn-tan" className="text-sm">tan</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('asin')} variant="action" id="btn-asin" className="text-sm">sin⁻¹</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('acos')} variant="action" id="btn-acos" className="text-sm">cos⁻¹</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('atan')} variant="action" id="btn-atan" className="text-sm">tan⁻¹</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('sin')} variant="action" id="btn-sin" className="text-xs sm:text-sm">sin</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('cos')} variant="action" id="btn-cos" className="text-xs sm:text-sm">cos</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('tan')} variant="action" id="btn-tan" className="text-xs sm:text-sm">tan</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('asin')} variant="action" id="btn-asin" className="text-[10px] sm:text-xs">sin⁻¹</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('acos')} variant="action" id="btn-acos" className="text-[10px] sm:text-xs">cos⁻¹</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('atan')} variant="action" id="btn-atan" className="text-[10px] sm:text-xs">tan⁻¹</CalcButton>
 
-              <CalcButton onClick={() => handleAdvanced('sinh')} variant="action" id="btn-sinh" className="text-sm">sinh</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('cosh')} variant="action" id="btn-cosh" className="text-sm">cosh</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('tanh')} variant="action" id="btn-tanh" className="text-sm">tanh</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('log10')} variant="action" id="btn-log10" className="text-sm">log₁₀</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('log2')} variant="action" id="btn-log2" className="text-sm">log₂</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('ln')} variant="action" id="btn-ln" className="text-sm">ln</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('sinh')} variant="action" id="btn-sinh" className="text-xs sm:text-sm">sinh</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('cosh')} variant="action" id="btn-cosh" className="text-xs sm:text-sm">cosh</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('tanh')} variant="action" id="btn-tanh" className="text-xs sm:text-sm">tanh</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('log10')} variant="action" id="btn-log10" className="text-[10px] sm:text-xs">log₁₀</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('log2')} variant="action" id="btn-log2" className="text-[10px] sm:text-xs">log₂</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('ln')} variant="action" id="btn-ln" className="text-xs sm:text-sm">ln</CalcButton>
 
-              <CalcButton onClick={() => handleAdvanced('sqrt')} variant="action" id="btn-sqrt" className="text-sm">√</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('cbrt')} variant="action" id="btn-cbrt" className="text-sm">∛</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('sqr')} variant="action" id="btn-sqr" className="text-sm">x²</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('cube')} variant="action" id="btn-cube" className="text-sm">x³</CalcButton>
-              <CalcButton onClick={() => chooseOperation('pow')} active={operation === 'pow'} variant="operator" id="btn-pow" className="text-sm">xʸ</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('exp')} variant="action" id="btn-exp" className="text-sm">eˣ</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('sqrt')} variant="action" id="btn-sqrt" className="text-xs sm:text-sm">√</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('cbrt')} variant="action" id="btn-cbrt" className="text-xs sm:text-sm">∛</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('sqr')} variant="action" id="btn-sqr" className="text-xs sm:text-sm">x²</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('cube')} variant="action" id="btn-cube" className="text-xs sm:text-sm">x³</CalcButton>
+              <CalcButton onClick={() => chooseOperation('pow')} active={operation === 'pow'} variant="operator" id="btn-pow" className="text-xs sm:text-sm">xʸ</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('exp')} variant="action" id="btn-exp" className="text-xs sm:text-sm">eˣ</CalcButton>
 
-              <CalcButton onClick={() => handleAdvanced('10x')} variant="action" id="btn-10x" className="text-sm">10ˣ</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('rand')} variant="action" id="btn-rand" className="text-sm">rand</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('round')} variant="action" id="btn-round" className="text-sm">round</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('floor')} variant="action" id="btn-floor" className="text-sm">floor</CalcButton>
-              <CalcButton onClick={() => handleAdvanced('ceil')} variant="action" id="btn-ceil" className="text-sm">ceil</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('10x')} variant="action" id="btn-10x" className="text-xs sm:text-sm">10ˣ</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('rand')} variant="action" id="btn-rand" className="text-xs sm:text-sm">rand</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('round')} variant="action" id="btn-round" className="text-xs sm:text-sm">round</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('floor')} variant="action" id="btn-floor" className="text-xs sm:text-sm">floor</CalcButton>
+              <CalcButton onClick={() => handleAdvanced('ceil')} variant="action" id="btn-ceil" className="text-xs sm:text-sm">ceil</CalcButton>
               <div className="bg-transparent" />
             </>
           )}
@@ -558,7 +556,7 @@ function CalcButton({ children, onClick, variant = 'number', active = false, cla
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       onClick={onClick}
       className={`
-        h-14 rounded-2xl flex items-center justify-center text-xl font-medium transition-colors duration-200
+        h-12 sm:h-14 rounded-2xl flex items-center justify-center text-lg sm:text-xl font-medium transition-colors duration-200
         ${getVariantStyles()}
         ${className}
       `}
